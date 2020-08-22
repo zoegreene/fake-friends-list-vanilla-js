@@ -1,33 +1,7 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-
 const axios = require('axios');
 
-const FriendList = (props) => {
-  const friends = props.friends
-  return (
-    <ul>
-      {friends.map(friend => {
-      return (
-      <li key={friend.id} data-id={friend.id}>
-        <h2>{ friend.name }</h2>
-        <span>{ friend.rating }</span>
-        <button data-id={friend.id} onClick={ async ()=> {
-          friend.rating = friend.rating + 1
-          console.log(friend.rating)
-          this.setState({
-            friends: friends
-          })
-
-//         await axios.put(`/api/friends/${friend.id}`, { rating: friend.rating });           
-        }}>+</button>
-        <button data-id={friend.id}>-</button>
-        <button data-id={friend.id}>x</button>
-      </li>
-      )})}
-    </ul>
-  )
-}
 
 class App extends Component {
   constructor () {
@@ -35,90 +9,78 @@ class App extends Component {
     this.state = {
       friends: []
     }
+    this.increaseRating = this.increaseRating.bind(this);
+    this.decreaseRating = this.decreaseRating.bind(this);
+    this.destroy = this.destroy.bind(this);
+    this.createFriend = this.createFriend.bind(this);
   }
 
   async componentDidMount () {
-    const response = await axios.get('api/friends')
-    const data = response.data
-    this.setState({
-      friends: data
-    })
+    this.setState({ friends: (await axios.get('api/friends')).data });
   }
 
   render() {
+    const friends = this.state.friends;
+    const { increaseRating, decreaseRating, destroy, createFriend } = this;
+
     return (
       <div>
-      <h1>Friends (The List)</h1>
-      <form>
-        <button>Create</button>
-      </form>
-      <FriendList friends={this.state.friends}/>
-      <div id='error'></div>
-      <ul></ul>
+        <h1>Friends (The List)</h1>
+        <form onSubmit={ createFriend }>
+          <button>Create</button>
+        </form>
+        <div id='error'></div>
+        <ul>
+          { friends.map(friend => {
+            return (
+              <li key={ friend.id }>
+                <h2>{ friend.name }</h2>
+                <span>{ friend.rating }</span>
+                <button data-id={ friend.id } onClick={ ()=> increaseRating(friend)}>+</button>
+                <button data-id={ friend.id } onClick={ () => decreaseRating(friend)}>-</button>
+                <button data-id={ friend.id } onClick={ () => destroy(friend)}>x</button>
+              </li>
+            )
+          })
+          }
+        </ul>
       </div>
     )
+  }
+
+  async increaseRating(friend) {
+    friend = (await axios.put(`/api/friends/${friend.id}`, { rating: friend.rating + 1 })).data;
+    const friends = this.state.friends
+      .map(f => f.id === friend.id ? friend : f)
+      .sort((a, b) => b.rating - a.rating);
+    this.setState({ friends });
+  }
+
+  async decreaseRating(friend) {
+    friend = (await axios.put(`api/friends/${friend.id}`, { rating: friend.rating - 1})).data;
+    const friends = this.state.friends
+      .map(f => f.id === friend.id ? friend : f)
+      .sort((a, b) => b.rating - a.rating)
+    this.setState({ friends });
+  }
+
+  async destroy(friend) {
+    await axios.delete(`api/friends/${friend.id}`);
+    const friends = this.state.friends.filter(f => f.id !== friend.id);
+    this.setState({ friends });
+  }
+
+  async createFriend(ev) {
+    ev.preventDefault();
+    const friend = (await axios.post('/api/friends')).data;
+    const friends = this.state.friends;
+    friends.push(friend);
+    friends.sort((a, b) =>  b.rating - a.rating);
+    this.setState({ friends });
   }
 }
 
 ReactDOM.render(
   <App />,
   document.getElementById('app')
-) 
-// const render = (friends)=> {
-//   const ul = document.querySelector('ul');
-//   const error = document.querySelector('#error');
-//   error.innerText = '';
-//   friends.sort((a, b)=> b.rating - a.rating);
-//   const html = friends.map( friend => {
-//     return `
-//       <li data-id='${friend.id}'>
-//         <h2>${ friend.name }</h2>
-//         <span>${ friend.rating }</span>
-//         <button data-id='${friend.id}'>+</button><button data-id='${friend.id}'>-</button><button data-id='${friend.id}'>x</button>
-//       </li>
-//     `;
-//   }).join('');
-//   ul.innerHTML = html;
-// };
-
-// const init = async()=> {
-//   const response = await axios.get('/api/friends');
-//   let friends = response.data;
-//   render(friends);
-//   const ul = document.querySelector('ul');
-//   const form = document.querySelector('form');
-//   const error = document.querySelector('#error');
-
-//   ul.addEventListener('click', async(ev)=> {
-//     if(ev.target.tagName === 'BUTTON'){
-//       if(ev.target.innerHTML === 'x'){
-//         const id = ev.target.getAttribute('data-id')*1;
-//         await axios.delete(`/api/friends/${id}`); 
-//         friends = friends.filter(friend => friend.id !== id); 
-//         render(friends);
-//       }
-//       else {
-//         const id = ev.target.getAttribute('data-id')*1;
-//         const friend = friends.find(item => item.id === id);
-//         const increase = ev.target.innerHTML === '+';
-//         friend.rating = increase ? ++friend.rating : --friend.rating;
-//         await axios.put(`/api/friends/${friend.id}`, { rating: friend.rating }); 
-//         render(friends);
-//       }
-//     }
-//   });
-
-//   form.addEventListener('submit', async(ev)=> {
-//     ev.preventDefault();
-//     try {
-//       const response = await axios.post('/api/friends');
-//       friends.push(response.data);
-//       render(friends);
-//     }
-//     catch(ex){
-//       error.innerText = ex.response.data.error;
-//     }
-//   });
-// };
-
-// init();
+)

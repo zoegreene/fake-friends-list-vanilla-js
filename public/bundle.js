@@ -40810,109 +40810,94 @@ __webpack_require__.r(__webpack_exports__);
 
 const axios = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
 
-const FriendList = props => {
-  const friends = props.friends;
-  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("ul", null, friends.map(friend => {
-    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", {
-      key: friend.id,
-      "data-id": friend.id
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h2", null, friend.name), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", null, friend.rating), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-      "data-id": friend.id,
-      onClick: async () => {
-        friend.rating = friend.rating + 1;
-        console.log(friend.rating);
-        undefined.setState({
-          friends: friends
-        }); //         await axios.put(`/api/friends/${friend.id}`, { rating: friend.rating });           
-      }
-    }, "+"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-      "data-id": friend.id
-    }, "-"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-      "data-id": friend.id
-    }, "x"));
-  }));
-};
-
 class App extends react__WEBPACK_IMPORTED_MODULE_0__["Component"] {
   constructor() {
     super();
     this.state = {
       friends: []
     };
+    this.increaseRating = this.increaseRating.bind(this);
+    this.decreaseRating = this.decreaseRating.bind(this);
+    this.destroy = this.destroy.bind(this);
+    this.createFriend = this.createFriend.bind(this);
   }
 
   async componentDidMount() {
-    const response = await axios.get('api/friends');
-    const data = response.data;
     this.setState({
-      friends: data
+      friends: (await axios.get('api/friends')).data
     });
   }
 
   render() {
-    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, "Friends (The List)"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("form", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", null, "Create")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(FriendList, {
-      friends: this.state.friends
-    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+    const friends = this.state.friends;
+    const {
+      increaseRating,
+      decreaseRating,
+      destroy,
+      createFriend
+    } = this;
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, "Friends (The List)"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("form", {
+      onSubmit: createFriend
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", null, "Create")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       id: "error"
-    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("ul", null));
+    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("ul", null, friends.map(friend => {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", {
+        key: friend.id
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h2", null, friend.name), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", null, friend.rating), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        "data-id": friend.id,
+        onClick: () => increaseRating(friend)
+      }, "+"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        "data-id": friend.id,
+        onClick: () => decreaseRating(friend)
+      }, "-"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        "data-id": friend.id,
+        onClick: () => destroy(friend)
+      }, "x"));
+    })));
+  }
+
+  async increaseRating(friend) {
+    friend = (await axios.put(`/api/friends/${friend.id}`, {
+      rating: friend.rating + 1
+    })).data;
+    const friends = this.state.friends.map(f => f.id === friend.id ? friend : f).sort((a, b) => b.rating - a.rating);
+    this.setState({
+      friends
+    });
+  }
+
+  async decreaseRating(friend) {
+    friend = (await axios.put(`api/friends/${friend.id}`, {
+      rating: friend.rating - 1
+    })).data;
+    const friends = this.state.friends.map(f => f.id === friend.id ? friend : f).sort((a, b) => b.rating - a.rating);
+    this.setState({
+      friends
+    });
+  }
+
+  async destroy(friend) {
+    await axios.delete(`api/friends/${friend.id}`);
+    const friends = this.state.friends.filter(f => f.id !== friend.id);
+    this.setState({
+      friends
+    });
+  }
+
+  async createFriend(ev) {
+    ev.preventDefault();
+    const friend = (await axios.post('/api/friends')).data;
+    const friends = this.state.friends;
+    friends.push(friend);
+    friends.sort((a, b) => b.rating - a.rating);
+    this.setState({
+      friends
+    });
   }
 
 }
 
-react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.render( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(App, null), document.getElementById('app')); // const render = (friends)=> {
-//   const ul = document.querySelector('ul');
-//   const error = document.querySelector('#error');
-//   error.innerText = '';
-//   friends.sort((a, b)=> b.rating - a.rating);
-//   const html = friends.map( friend => {
-//     return `
-//       <li data-id='${friend.id}'>
-//         <h2>${ friend.name }</h2>
-//         <span>${ friend.rating }</span>
-//         <button data-id='${friend.id}'>+</button><button data-id='${friend.id}'>-</button><button data-id='${friend.id}'>x</button>
-//       </li>
-//     `;
-//   }).join('');
-//   ul.innerHTML = html;
-// };
-// const init = async()=> {
-//   const response = await axios.get('/api/friends');
-//   let friends = response.data;
-//   render(friends);
-//   const ul = document.querySelector('ul');
-//   const form = document.querySelector('form');
-//   const error = document.querySelector('#error');
-//   ul.addEventListener('click', async(ev)=> {
-//     if(ev.target.tagName === 'BUTTON'){
-//       if(ev.target.innerHTML === 'x'){
-//         const id = ev.target.getAttribute('data-id')*1;
-//         await axios.delete(`/api/friends/${id}`); 
-//         friends = friends.filter(friend => friend.id !== id); 
-//         render(friends);
-//       }
-//       else {
-//         const id = ev.target.getAttribute('data-id')*1;
-//         const friend = friends.find(item => item.id === id);
-//         const increase = ev.target.innerHTML === '+';
-//         friend.rating = increase ? ++friend.rating : --friend.rating;
-//         await axios.put(`/api/friends/${friend.id}`, { rating: friend.rating }); 
-//         render(friends);
-//       }
-//     }
-//   });
-//   form.addEventListener('submit', async(ev)=> {
-//     ev.preventDefault();
-//     try {
-//       const response = await axios.post('/api/friends');
-//       friends.push(response.data);
-//       render(friends);
-//     }
-//     catch(ex){
-//       error.innerText = ex.response.data.error;
-//     }
-//   });
-// };
-// init();
+react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.render( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(App, null), document.getElementById('app'));
 
 /***/ }),
 
